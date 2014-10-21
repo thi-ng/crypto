@@ -1,6 +1,6 @@
 # thi.ng/crypto
 
-A collection of Clojure functions to provide basic GPG keypair generation, file/stream encryption & decryption.
+A small collection of Clojure functions to provide basic GPG keypair generation, file/stream encryption & decryption.
 
 ## Dependencies
 
@@ -17,16 +17,16 @@ Leiningen coordinates: `[thi.ng/crypto "0.1.0-SNAPSHOT"]`
 ; generate a new RSA keypair, private w/ identity & passphrase, save as armored files
 (-> (rsa-keypair 2048)
     (generate-secret-key "alice@example.org" "hello")
-    (export-keypair "alice.pub" "alice.sec" true))
+    (export-keypair "alice.pub.asc" "alice.sec.asc" true))
 ; => nil
 
 (spit "foo.txt" "hello world!")
 ; => nil
 
-(encrypt-stream "foo.txt" "foo.gpg" (public-key "alice.pub"))
+(encrypt-stream "foo.txt" "foo.gpg" (public-key "alice.pub.asc"))
 ; => nil
 
-(decrypt "foo.gpg" "foo-decrypted.txt" (secret-key "alice.sec") "hello")
+(decrypt "foo.gpg" "foo-decrypted.txt" (secret-key "alice.sec.asc") "hello")
 ; => #<BufferedOutputStream java.io.BufferedOutputStream@5dbe43af>
 
 (slurp "foo-decrypted.txt")
@@ -35,8 +35,8 @@ Leiningen coordinates: `[thi.ng/crypto "0.1.0-SNAPSHOT"]`
 
 The generated keys can also be used with the `gpg` command line tool:
 
-```bash
-gpg --list-packet alice.pub
+```
+gpg --list-packet alice.pub.asc
 :public key packet:
 	version 4, algo 1, created 1413932095, expires 0
 	pkey[0]: [2048 bits]
