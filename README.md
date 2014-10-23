@@ -14,19 +14,23 @@ Leiningen coordinates: `[thi.ng/crypto "0.1.0-SNAPSHOT"]`
 ```clojure
 (require '[thi.ng.crypto.core :refer :all])
 
-; generate a new RSA keypair, private w/ identity & passphrase, save as armored files
+;; generate a new RSA keypair, private w/ identity & passphrase, save as armored files
 (-> (rsa-keypair 2048)
     (generate-secret-key "alice@example.org" "hello")
     (export-keypair "alice.pub.asc" "alice.sec.asc" true))
 ; => nil
 
+;; create dummy file
 (spit "foo.txt" "hello world!")
 ; => nil
 
+;; note: for files `encrypt-file` can be used alternatively,
+;; but `encrypt-stream` is more flexible
 (encrypt-stream "foo.txt" "foo.gpg" (public-key "alice.pub.asc"))
 ; => nil
 
-(decrypt "foo.gpg" "foo-decrypted.txt" (secret-key "alice.sec.asc") "hello")
+;; decrypt with secret key & passphrase
+(decrypt-stream "foo.gpg" "foo-decrypted.txt" (secret-key "alice.sec.asc") "hello")
 ; => #<BufferedOutputStream java.io.BufferedOutputStream@5dbe43af>
 
 (slurp "foo-decrypted.txt")

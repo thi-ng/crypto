@@ -52,6 +52,7 @@
 (def elgamal-keypair (generate-keypair* "ELGAMAL"))
 
 (defn generate-secret-key
+  "Generates secret key from given keypair, identity & passphrase."
   [^KeyPair pair ^String ident ^String pass]
   (let [sha1 (.. (JcaPGPDigestCalculatorProviderBuilder.)
                  (build)
@@ -73,7 +74,10 @@
      enc)))
 
 (defn export-keypair
-  [^PGPSecretKey key out-pub out-sec armored?]
+  "Takes a secret key and two output targets/streams/filepaths to write
+  public & secret keys to. An optional truthy arg can be added to write
+  keys as armored ASCII."
+  [^PGPSecretKey key out-pub out-sec & [armored?]]
   (let [outp (io/output-stream out-pub)
         outs (io/output-stream out-sec)]
     (with-open [outp (if armored? (ArmoredOutputStream. outp) outp)
@@ -82,6 +86,8 @@
       (-> key (.getPublicKey) (.encode outp)))))
 
 (defn public-key
+  "Retrieves first public key which can be used for encryption from
+  given stream/path."
   [path]
   (with-open [in (io/input-stream path)]
     (->> (for [ring (-> (PGPUtil/getDecoderStream in)
@@ -93,6 +99,8 @@
          (some #(if (.isEncryptionKey ^PGPPublicKey %) %)))))
 
 (defn secret-key
+  "Retrieves first secret key which is usable for signing from given
+  stream/path. Also checks that related public key is not revoked."
   [path]
   (with-open [in (io/input-stream path)]
     (->> (for [ring (-> (PGPUtil/getDecoderStream in)
@@ -107,6 +115,7 @@
              %)))))
 
 (defn extract-private-key
+  "Takes a secret key & passphrase, extracts encrypted private key."
   [^PGPSecretKey key ^chars pass]
   (.extractPrivateKey
    key (-> (BcPGPDigestCalculatorProvider.)
@@ -144,14 +153,20 @@
       (.write out bytes))))
 
 (defn encrypt-file
+  "Takes a src file path, output target & public key. Writes encrypted
+  file to target stream."
   [src dest ^PGPPublicKey pub-key]
   (encrypt-bytes (file->zipped-bytes src) dest pub-key))
 
 (defn encrypt-stream
+  "Takes a src stream, output stream & public key. Writes encrypted
+  file to output."
   [src dest ^PGPPublicKey pub-key]
   (encrypt-bytes (stream->zipped-bytes src (str (java.util.UUID/randomUUID)) 0x1000) dest pub-key))
 
-(defn decrypt
+(defn decrypt-stream
+  "Takes a src stream, output stream & public key. Writes decrypted
+  file to output."
   [src out sec-key pass]
   (with-open [in  (io/input-stream src)
               out (io/output-stream out)]
